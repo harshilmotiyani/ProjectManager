@@ -2030,6 +2030,9 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   components: {
@@ -2048,7 +2051,7 @@ __webpack_require__.r(__webpack_exports__);
       var user_id = 1;
       var name = "New task";
       var category_id = this.categories[id].id;
-      var order = this.categories[id + 1].tasks.length;
+      var order = this.categories[id].tasks.length;
       axios.post('api/task', {
         name: name,
         category_id: category_id,
@@ -2067,14 +2070,25 @@ __webpack_require__.r(__webpack_exports__);
     },
     changeOrder: function changeOrder(data) {
       console.log("Inside changeOrder");
+      console.log('Data: ', data);
+      console.log('Data to: ', data.to);
       var toTask = data.to;
       var fromTask = data.from;
-      var task_id = data.item.id;
-      var category_id = fromTask.id == toTask.id ? null : toTask.id;
-      var order = data.newIndex == data.oldIndex ? false : data.newIndex;
+      var task_id = data.item.id; // console.log('Data: ', data);
 
-      if (order !== false) {
-        console.log("sdfg");
+      var category_id = fromTask.id == toTask.id ? null : toTask.id;
+      var order = data.newIndex == data.oldIndex ? false : data.newIndex; //  location.reload();
+
+      console.log(category_id);
+      console.log(order);
+      console.log(data.newIndex);
+
+      if (order !== false && category_id != null) {
+        console.log("sdfg"); //if(this.categories[categories.id])
+
+        console.log('Task ID: ', task_id);
+        console.log('Order: ', order);
+        console.log('Category ID: ', category_id);
         axios.patch("api/task/".concat(task_id), {
           order: order,
           category_id: category_id
@@ -2092,28 +2106,42 @@ __webpack_require__.r(__webpack_exports__);
     editTask: function editTask(task) {
       this.editingTask = task;
     },
-    DeleteTask: function DeleteTask(task) {
+    DeleteTask: function DeleteTask(task, id) {
+      var _this2 = this;
+
       axios["delete"]("api/task/".concat(task.id)).then(function (response) {
-        alert("Task Deleted Successfully");
+        // Find category with task ID equal to task.id
+        // Also, remove it from there.
+        var index = _this2.categories[id].tasks.findIndex(function (currentTask) {
+          return currentTask.id === task.id;
+        });
+
+        _this2.categories[id].tasks.splice(index, 1); // this.categories[id].tasks = this.categories[id].tasks.filter(currentTask => currentTask.id !== task.id)
+        // this.$delete(this.categories[id].tasks,task.id);
+        //  alert("Task Deleted Successfully");
+        //  location.reload();
+
       });
     }
   },
   mounted: function mounted() {
-    var _this2 = this;
+    var _this3 = this;
 
     var token = localStorage.getItem('jwt');
     axios.defaults.headers.common['Content-Type'] = 'application/json';
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
     axios.get('api/category').then(function (response) {
       response.data.forEach(function (data) {
-        _this2.categories.push({
+        _this3.categories.push({
           id: data.id,
           name: data.name,
           tasks: []
         });
       });
 
-      _this2.loadTasks();
+      _this3.loadTasks();
+
+      _this3.$store.commit('change');
     });
   },
   computed: {
@@ -24448,7 +24476,11 @@ var render = function() {
           "draggable",
           {
             staticClass: "col-md-12",
-            attrs: { element: "div", options: _vm.dragOptions },
+            attrs: {
+              element: "div",
+              list: _vm.categories,
+              options: _vm.dragOptions
+            },
             model: {
               value: _vm.categories,
               callback: function($$v) {
@@ -24462,144 +24494,164 @@ var render = function() {
               "transition-group",
               { staticClass: "row" },
               _vm._l(_vm.categories, function(element, index) {
-                return _c("div", { key: element.id, staticClass: "col-md-4" }, [
-                  _c("div", { staticClass: "card" }, [
-                    _c("div", { staticClass: "card-header" }, [
-                      _c("h4", { staticClass: "card-title" }, [
-                        _vm._v(_vm._s(element.name))
-                      ])
-                    ]),
-                    _vm._v(" "),
-                    _c(
-                      "div",
-                      { staticClass: "card-body card-body-dark" },
-                      [
-                        _c(
-                          "draggable",
-                          {
-                            attrs: { options: _vm.dragOptions, element: "div" },
-                            on: { end: _vm.changeOrder },
-                            model: {
-                              value: element.tasks,
-                              callback: function($$v) {
-                                _vm.$set(element, "tasks", $$v)
+                return _c(
+                  "div",
+                  {
+                    key: element.id,
+                    staticClass: "col-md-4",
+                    attrs: { id: element.id }
+                  },
+                  [
+                    _c("div", { staticClass: "card" }, [
+                      _c("div", { staticClass: "card-header" }, [
+                        _c("h4", { staticClass: "card-title" }, [
+                          _vm._v(_vm._s(element.name))
+                        ])
+                      ]),
+                      _vm._v(" "),
+                      _c(
+                        "div",
+                        { staticClass: "card-body card-body-dark" },
+                        [
+                          _c(
+                            "draggable",
+                            {
+                              attrs: {
+                                options: _vm.dragOptions,
+                                element: "div",
+                                list: element.tasks
                               },
-                              expression: "element.tasks"
-                            }
-                          },
-                          [
-                            _c(
-                              "transition-group",
-                              { attrs: { id: element.id } },
-                              _vm._l(element.tasks, function(task) {
-                                return _c(
-                                  "div",
-                                  {
-                                    key: task.category_id + "," + task.order,
-                                    staticClass: "transit-1",
-                                    attrs: { id: task.id }
-                                  },
-                                  [
-                                    _c("div", { staticClass: "small-card" }, [
-                                      task === _vm.editingTask
-                                        ? _c("textarea", {
-                                            directives: [
-                                              {
-                                                name: "model",
-                                                rawName: "v-model",
-                                                value: task.name,
-                                                expression: "task.name"
-                                              }
-                                            ],
-                                            staticClass: "text-input",
-                                            domProps: { value: task.name },
-                                            on: {
-                                              keyup: function($event) {
-                                                if (
-                                                  !$event.type.indexOf("key") &&
-                                                  _vm._k(
-                                                    $event.keyCode,
-                                                    "enter",
-                                                    13,
-                                                    $event.key,
-                                                    "Enter"
+                              on: { end: _vm.changeOrder },
+                              model: {
+                                value: element.tasks,
+                                callback: function($$v) {
+                                  _vm.$set(element, "tasks", $$v)
+                                },
+                                expression: "element.tasks"
+                              }
+                            },
+                            [
+                              _c(
+                                "transition-group",
+                                { attrs: { id: element.id } },
+                                _vm._l(element.tasks, function(task) {
+                                  return _c(
+                                    "div",
+                                    {
+                                      key: task.category_id + "," + task.id,
+                                      staticClass: "transit-1",
+                                      attrs: {
+                                        id: task.id,
+                                        categoryId: element.id
+                                      }
+                                    },
+                                    [
+                                      _c("div", { staticClass: "small-card" }, [
+                                        task === _vm.editingTask
+                                          ? _c("textarea", {
+                                              directives: [
+                                                {
+                                                  name: "model",
+                                                  rawName: "v-model",
+                                                  value: task.name,
+                                                  expression: "task.name"
+                                                }
+                                              ],
+                                              staticClass: "text-input",
+                                              domProps: { value: task.name },
+                                              on: {
+                                                keyup: function($event) {
+                                                  if (
+                                                    !$event.type.indexOf(
+                                                      "key"
+                                                    ) &&
+                                                    _vm._k(
+                                                      $event.keyCode,
+                                                      "enter",
+                                                      13,
+                                                      $event.key,
+                                                      "Enter"
+                                                    )
+                                                  ) {
+                                                    return null
+                                                  }
+                                                  return _vm.endEditing(task)
+                                                },
+                                                blur: function($event) {
+                                                  return _vm.endEditing(task)
+                                                },
+                                                input: function($event) {
+                                                  if ($event.target.composing) {
+                                                    return
+                                                  }
+                                                  _vm.$set(
+                                                    task,
+                                                    "name",
+                                                    $event.target.value
                                                   )
-                                                ) {
-                                                  return null
                                                 }
-                                                return _vm.endEditing(task)
-                                              },
-                                              blur: function($event) {
-                                                return _vm.endEditing(task)
-                                              },
-                                              input: function($event) {
-                                                if ($event.target.composing) {
-                                                  return
+                                              }
+                                            })
+                                          : _vm._e(),
+                                        _vm._v(" "),
+                                        task !== _vm.editingTask
+                                          ? _c(
+                                              "label",
+                                              {
+                                                on: {
+                                                  dblclick: function($event) {
+                                                    return _vm.editTask(task)
+                                                  }
                                                 }
-                                                _vm.$set(
+                                              },
+                                              [_vm._v(_vm._s(task.name))]
+                                            )
+                                          : _vm._e(),
+                                        _vm._v(" "),
+                                        _c(
+                                          "button",
+                                          {
+                                            on: {
+                                              click: function($event) {
+                                                return _vm.DeleteTask(
                                                   task,
-                                                  "name",
-                                                  $event.target.value
+                                                  index
                                                 )
                                               }
                                             }
-                                          })
-                                        : _vm._e(),
-                                      _vm._v(" "),
-                                      task !== _vm.editingTask
-                                        ? _c(
-                                            "label",
-                                            {
-                                              on: {
-                                                dblclick: function($event) {
-                                                  return _vm.editTask(task)
-                                                }
-                                              }
-                                            },
-                                            [_vm._v(_vm._s(task.name))]
-                                          )
-                                        : _vm._e(),
-                                      _vm._v(" "),
-                                      _c(
-                                        "button",
-                                        {
-                                          on: {
-                                            click: function($event) {
-                                              return _vm.DeleteTask(task)
-                                            }
-                                          }
-                                        },
-                                        [_vm._v("Delete")]
-                                      )
-                                    ])
-                                  ]
-                                )
-                              }),
-                              0
-                            )
-                          ],
-                          1
-                        ),
-                        _vm._v(" "),
-                        _c("div", { staticClass: "small-card" }, [
-                          _c(
-                            "h5",
-                            {
-                              staticClass: "text-center",
-                              on: {
-                                click: function($event) {
-                                  return _vm.addNew(index)
+                                          },
+                                          [_vm._v("Delete")]
+                                        )
+                                      ])
+                                    ]
+                                  )
+                                }),
+                                0
+                              )
+                            ],
+                            1
+                          ),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "small-card" }, [
+                            _c(
+                              "h5",
+                              {
+                                staticClass: "text-center",
+                                on: {
+                                  click: function($event) {
+                                    return _vm.addNew(index)
+                                  }
                                 }
-                              }
-                            },
-                            [_vm._v("Add new card")]
-                          )
-                        ])
-                      ],
-                      1
-                    )
-                  ])
-                ])
+                              },
+                              [_vm._v("Add new card")]
+                            )
+                          ])
+                        ],
+                        1
+                      )
+                    ])
+                  ]
+                )
               }),
               0
             )
